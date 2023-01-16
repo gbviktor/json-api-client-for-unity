@@ -1,0 +1,34 @@
+{
+  "name": "com.gbviktor.json-api-client-for-unity",
+  "displayName": "Json API Client",
+  "author": {
+    "name": "Victor Bisterfeld",
+    "url": "https://gbviktor.de/json-api-client-for-unity"
+  },
+  "version": "1.0.0",
+  "unity": "2022.1",
+  "description": "help you to boost up your first API service communication with JSON as payload and Bearer authorization Scheme",
+  "keywords": [
+    "client",
+    "api",
+    "https",
+    "http",
+    "network"
+  ],
+  "license": "MIT",
+  "category": "Manager",
+  "dependencies": {
+    "com.cysharp.unitask": "2.3.1"
+  },
+  "samples": [
+    {
+      "displayName": "API Client Demo",
+      "description": "Sample how to Use API Client Get/Post methods",
+      "path": "Samples~/SampleOne"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gbviktor/json-api-client-for-unity.git"
+  }
+}
