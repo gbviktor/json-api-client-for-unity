@@ -24,7 +24,6 @@ namespace MontanaGames.JsonAPIClient
         #region Header for Editor
 #if UNITY_EDITOR
         const string EditorHeader = "x-unity-editor";
-        private const string Scheme = "Bearer";
 
         string EditorHeaderValue = "";
 
@@ -47,6 +46,7 @@ namespace MontanaGames.JsonAPIClient
 
         #region Bearer Token Header
         private string bearerToken;
+        private const string Scheme = "Bearer";
         public string BearerToken
         {
             get => bearerToken;
