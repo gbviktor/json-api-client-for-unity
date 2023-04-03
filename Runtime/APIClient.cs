@@ -149,6 +149,11 @@ namespace MontanaGames.JsonAPIClient
                 {
                     IsConnected = true;
                     RESPONSE res = serializer.Deserialize<RESPONSE>(reader);
+                    
+                    if (response.Headers.TryGetValues("X-Authorization", out var keys))
+                    {
+                        BearerToken = keys.FirstOrDefault();
+                    }
 
                     return res;
                 }
@@ -190,7 +195,12 @@ namespace MontanaGames.JsonAPIClient
                 {
                     IsConnected = true;
                     RESPONSE_TYPE res = serializer.Deserialize<RESPONSE_TYPE>(reader);
-
+                    
+                    if (httpResponse.Headers.TryGetValues("X-Authorization", out var keys))
+                    {
+                        BearerToken = keys.FirstOrDefault();
+                    }
+                    
                     return res;
                 } else if (statusCode == HttpStatusCode.Unauthorized)
                 {
