@@ -17,29 +17,19 @@ namespace MontanaGames.JsonAPIClient
 
     public class APIClient
     {
-        public bool IsConnected { get; set; }
+        public bool IsConnected { get; private set; }
 
         #region Header for Editor
 #if UNITY_EDITOR
-        const string EditorHeader = "x-unity-editor";
-
-        string EditorHeaderValue = "";
+        private const string EditorHeader = "x-unity-editor";
 
         public APIClient SetEditorAPIKey(string key)
         {
-            EditorHeaderValue = key;
-            ApplyEditorHeader();
+            SetDefaultHeader(EditorHeader, key);
             return this;
         }
 
 #endif
-        private void ApplyEditorHeader()
-        {
-#if UNITY_EDITOR
-            client.DefaultRequestHeaders.Remove(EditorHeader);
-            client.DefaultRequestHeaders.Add(EditorHeader, EditorHeaderValue);
-#endif
-        }
         #endregion
 
         #region Bearer Token Header
@@ -124,10 +114,19 @@ namespace MontanaGames.JsonAPIClient
 
             client = new HttpClient(handler);
             client.Timeout = TimeSpan.FromSeconds(19);
-
-            ApplyEditorHeader();
         }
-
+        
+        public APIClient SetDefaultHeader(string headerName, string headerValue)
+        {
+            client.DefaultRequestHeaders.Remove(headerName);
+            client.DefaultRequestHeaders.Add(headerName, headerValue);
+            return this;
+        }
+        public APIClient RemoveDefaultHeader(string headerName)
+        {
+            client.DefaultRequestHeaders.Remove(headerName);
+            return this;
+        }
         #endregion
 
         public async UniTask<ResponseType> GetAsync<ResponseType>(string path, Action onError = default)
@@ -153,7 +152,6 @@ namespace MontanaGames.JsonAPIClient
                         var headers = response.Headers;
                         ApplyBearerTokenFromResponseHeader(headers);
                     
-                    
                         return res;
                     }
                     case HttpStatusCode.Unauthorized:
@@ -175,7 +173,7 @@ namespace MontanaGames.JsonAPIClient
             return default;
         }
 
-        public async UniTask<ResponseType> SendAsync<RequestType, ResponseType>(string relativePath, RequestType data)
+        public async UniTask<ResponseType> SendAsync<RequestType, ResponseType>(string relativePath, RequestType data, Action onError = default)
         {
             try
             {
@@ -184,9 +182,9 @@ namespace MontanaGames.JsonAPIClient
                 var response = await client.PostAsync(requestUrl,
                     new StringContent(ToJsonString(data), Encoding.UTF8));
 
-                var s = await response.Content.ReadAsStreamAsync();
+                var responseStream = await response.Content.ReadAsStreamAsync();
 
-                using var sr = new StreamReader(s);
+                using var sr = new StreamReader(responseStream);
                 using JsonReader reader = new JsonTextReader(sr);
 
                 var statusCode = response.StatusCode;
@@ -206,6 +204,8 @@ namespace MontanaGames.JsonAPIClient
                         onUnathorized?.Invoke();
                         break;
                     default:
+                        onError?.Invoke();
+                        onRequestNotOk?.Invoke((int)statusCode);
                         Debug.Log($"{statusCode}:{response.Content}");
                         break;
                 }
