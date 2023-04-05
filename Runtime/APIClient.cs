@@ -3,10 +3,11 @@ using System.IO;
 using System.Net;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 
 using Cysharp.Threading.Tasks;
-
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 using UnityEngine;
@@ -16,11 +17,7 @@ namespace MontanaGames.JsonAPIClient
 
     public class APIClient
     {
-        public bool IsConnected
-        {
-            get;
-            set;
-        }
+        public bool IsConnected { get; set; }
 
         #region Header for Editor
 #if UNITY_EDITOR
@@ -133,39 +130,40 @@ namespace MontanaGames.JsonAPIClient
 
         #endregion
 
-        public async UniTask<RESPONSE> GetAsync<RESPONSE>(string path, Action onError = default)
+        public async UniTask<ResponseType> GetAsync<ResponseType>(string path, Action onError = default)
         {
             try
             {
                 var requestUrl = $"{baseUrl}/{path}";
                 var response = await client.GetAsync(requestUrl);
 
-                using var getSteam = await response.Content.ReadAsStreamAsync();
+                await using var getSteam = await response.Content.ReadAsStreamAsync();
 
-                using StreamReader sr = new StreamReader(getSteam);
+                using var sr = new StreamReader(getSteam);
                 using JsonReader reader = new JsonTextReader(sr);
 
                 var statusCode = response.StatusCode;
-                if (statusCode == HttpStatusCode.OK)
+                switch (statusCode)
                 {
-                    IsConnected = true;
-                    RESPONSE res = serializer.Deserialize<RESPONSE>(reader);
-                    
-                    if (response.Headers.TryGetValues("X-Authorization", out var keys))
+                    case HttpStatusCode.OK:
                     {
-                        BearerToken = keys.FirstOrDefault();
-                    }
+                        IsConnected = true;
+                        var res = serializer.Deserialize<ResponseType>(reader);
 
-                    return res;
-                }
-                if (statusCode == HttpStatusCode.Unauthorized)
-                {
-                    onUnathorized?.Invoke();
-                } else
-                {
-                    onError?.Invoke();
-                    onRequestNotOk?.Invoke((int)statusCode);
-                    Debug.Log($"{response.StatusCode}:{response.Content}");
+                        var headers = response.Headers;
+                        ApplyBearerTokenFromResponseHeader(headers);
+                    
+                    
+                        return res;
+                    }
+                    case HttpStatusCode.Unauthorized:
+                        onUnathorized?.Invoke();
+                        break;
+                    default:
+                        onError?.Invoke();
+                        onRequestNotOk?.Invoke((int)statusCode);
+                        Debug.Log($"{response.StatusCode}:{response.Content}");
+                        break;
                 }
 
             } catch (Exception er)
@@ -177,40 +175,40 @@ namespace MontanaGames.JsonAPIClient
             return default;
         }
 
-        public async UniTask<RESPONSE_TYPE> SendAsync<REQUEST_TYPE, RESPONSE_TYPE>(string relativePath, REQUEST_TYPE data)
+        public async UniTask<ResponseType> SendAsync<RequestType, ResponseType>(string relativePath, RequestType data)
         {
             try
             {
                 var requestUrl = $"{baseUrl}/{relativePath}";
 
-                var httpResponse = await client.PostAsync(requestUrl,
+                var response = await client.PostAsync(requestUrl,
                     new StringContent(ToJsonString(data), Encoding.UTF8));
 
-                var s = await httpResponse.Content.ReadAsStreamAsync();
+                var s = await response.Content.ReadAsStreamAsync();
 
-                using StreamReader sr = new StreamReader(s);
+                using var sr = new StreamReader(s);
                 using JsonReader reader = new JsonTextReader(sr);
 
-                var statusCode = httpResponse.StatusCode;
-                if (statusCode == HttpStatusCode.OK)
+                var statusCode = response.StatusCode;
+                switch (statusCode)
                 {
-                    IsConnected = true;
-                    RESPONSE_TYPE res = serializer.Deserialize<RESPONSE_TYPE>(reader);
-                    
-                    if (httpResponse.Headers.TryGetValues("X-Authorization", out var keys))
+                    case HttpStatusCode.OK:
                     {
-                        BearerToken = keys.FirstOrDefault();
-                    }
+                        IsConnected = true;
+                        var responseObject = serializer.Deserialize<ResponseType>(reader);
                     
-                    return res;
-                } else if (statusCode == HttpStatusCode.Unauthorized)
-                {
-                    onUnathorized?.Invoke();
-                } else
-                {
-                    Debug.Log($"{statusCode}:{httpResponse.Content}");
+                        var headers = response.Headers;
+                        ApplyBearerTokenFromResponseHeader(headers);
+                    
+                        return responseObject;
+                    }
+                    case HttpStatusCode.Unauthorized:
+                        onUnathorized?.Invoke();
+                        break;
+                    default:
+                        Debug.Log($"{statusCode}:{response.Content}");
+                        break;
                 }
-
             } catch (Exception er)
             {
                 IsConnected = false;
@@ -219,5 +217,17 @@ namespace MontanaGames.JsonAPIClient
 
             return default;
         }
+
+        #region Utilities
+
+        private void ApplyBearerTokenFromResponseHeader([NotNull] HttpResponseHeaders headers)
+        {
+            if (headers == null) throw new ArgumentNullException(nameof(headers));
+            if (headers.TryGetValues("X-Authorization", out var keys))
+            {
+                BearerToken = keys.FirstOrDefault();
+            }
+        }
+        #endregion
     }
 }
