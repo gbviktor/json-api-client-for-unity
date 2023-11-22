@@ -1,7 +1,13 @@
-## Json API Client for Unity
-This Package simplify async (UniTask) API requests from Unity 
- - Authorization with Bearer Scheme only, but you can implement other types by yourself
+# Unity C# JSON APIClient
 
+## Features
+
+- **Integration:** Custom header support.
+- **Bearer Token Authentication:** Easy bearer token management for secure API communication.
+- **Asynchronous API Calls:** Utilizes `UniTask` for efficient asynchronous operations.
+- **Customizable Serialization:** Flexible JSON serialization settings.
+- **Error Handling:** Built-in methods to handle unauthorized access and non-OK responses.
+- **Header Management:** Functions to set and remove default headers.
 ## Install with Unity Package Manager
 - in Unity go to *Windows > Package Manager*
 - press ` + ` and select ` Add package from git URL...`
@@ -9,36 +15,57 @@ This Package simplify async (UniTask) API requests from Unity
 https://github.com/gbviktor/json-api-client-for-unity.git
 ```
 
-## How to use
+- Ensure you have the necessary dependencies: `Newtonsoft.Json` and `Cysharp.Threading.Tasks`.
+ 
+## Usage
+### Initialization
 
 ```csharp
-[SerializeField] private string url = "http://localhost:8080";
+var client = new APIClient("https://api.yourserver.com");
+client.SetBearerToken("your-bearer-token");
+```
 
-//Cache client and set onUnathorized Event, to login automaticaly
-private APIClient client => _client ??= new APIClient(url)
-.OnUnauthorized(() =>
-  {
-    Debug.Log("Try Authorize with your");
+### Making GET Requests
 
-    //var token = SteamAuth();
-    client.SetBearerToken("put client token here");
-  });
-		
-//some test struct
-public struct UserInfo
-{
-	[JsonProperty("age")]
-	public int Age { get; set; }
-	[JsonProperty("count")]
-	public int Count { get; set; }
-	[JsonProperty("name")]
-	public string Name { get; set; }
-}
+```
+var response = await client.GetAsync<YourResponseType>("endpoint");
+// Handle response
+```
+### Making POST Requests
 
+```cs
+var requestData = new YourRequestType();
+var response = await client.SendAsync<YourRequestType, YourResponseType>("endpoint", requestData);
+// Handle response
+```
+### Error Handling
+
+```cs
+client.OnUnauthorized(() => {
+    // Handle unauthorized access
+});
+
+client.OnRequestNotOk((statusCode) => {
+    // Handle another response codes
+});
 
 ```
 
-### Example 2 (Simple Get Call)
+### Setting Custom Headers
+
+```cs
+client.SetDefaultHeader("Custom-Header", "value");
+```
+
+## Notes
+
+- This client is designed for Unity projects and uses Unity-specific features like `Debug.Log`.
+- Make sure to handle exceptions and errors as per your project's requirements.
+- Customize the client as needed to fit the specific needs of your API.
+
+## Examples
+
+### Example (Simple Get Call)
 
 ```csharp 
 
