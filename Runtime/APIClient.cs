@@ -4,6 +4,7 @@ using System.Net;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Text;
 
 using Cysharp.Threading.Tasks;
@@ -57,11 +58,25 @@ namespace MontanaGames.JsonAPIClient
 
         #region Client Events
         private Action<int> onRequestNotOk;
-        private Action onUnathorized;
+        private Action onUnauthorized;
+        private Action<string> onNetworkError;
+        private Action<string> onServerError;
 
-        public APIClient OnUnauthorized(Action onUnathorized)
+        public APIClient OnUnauthorized(Action onUnauthorized)
         {
-            this.onUnathorized = onUnathorized;
+            this.onUnauthorized = onUnauthorized;
+            return this;
+        }
+
+        public APIClient OnNetworkError(Action<string> onNetworkError)
+        {
+            this.onNetworkError = onNetworkError;
+            return this;
+        }
+
+        public APIClient OnServerError(Action<string> onServerError)
+        {
+            this.onServerError = onServerError;
             return this;
         }
 
@@ -155,7 +170,7 @@ namespace MontanaGames.JsonAPIClient
                         return res;
                     }
                     case HttpStatusCode.Unauthorized:
-                        onUnathorized?.Invoke();
+                        onUnauthorized?.Invoke();
                         break;
                     default:
                         onError?.Invoke();
@@ -164,10 +179,17 @@ namespace MontanaGames.JsonAPIClient
                         break;
                 }
 
-            } catch (Exception er)
+            } 
+            catch (HttpRequestException ex)
+            {
+                onServerError?.Invoke($"Server error: {ex.Message}");
+                Debug.LogError($"Server error: {ex.Message}");
+            } 
+            catch (Exception ex)
             {
                 IsConnected = false;
-                Debug.LogError(er);
+                onNetworkError?.Invoke($"Network error: {ex.Message}");
+                Debug.LogError($"Network error: {ex.Message}");
             }
 
             return default;
@@ -201,7 +223,7 @@ namespace MontanaGames.JsonAPIClient
                         return responseObject;
                     }
                     case HttpStatusCode.Unauthorized:
-                        onUnathorized?.Invoke();
+                        onUnauthorized?.Invoke();
                         break;
                     default:
                         onError?.Invoke();
@@ -209,10 +231,17 @@ namespace MontanaGames.JsonAPIClient
                         Debug.Log($"{statusCode}:{response.Content}");
                         break;
                 }
-            } catch (Exception er)
+            }
+            catch (HttpRequestException ex)
+            {
+                onServerError?.Invoke($"Server error: {ex.Message}");
+                Debug.LogError($"Server error: {ex.Message}");
+            } 
+            catch (Exception ex)
             {
                 IsConnected = false;
-                Debug.LogError(er);
+                onNetworkError?.Invoke($"Network error: {ex.Message}");
+                Debug.LogError($"Network error: {ex.Message}");
             }
 
             return default;

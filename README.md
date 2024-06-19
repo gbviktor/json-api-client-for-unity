@@ -49,6 +49,14 @@ client.OnRequestNotOk((statusCode) => {
     // Handle another response codes
 });
 
+client.OnNetworkError((errorMessage) =>{
+    // Handle network error
+});
+
+client.OnServerError((errorMessage) =>{
+    // Handle network error
+});
+
 ```
 
 ### Setting Custom Headers
