@@ -5,7 +5,7 @@
     "name": "Victor Bisterfeld",
     "url": "https://gbviktor.de/json-api-client-for-unity"
   },
-  "version": "1.1.1",
+  "version": "1.1.2",
   "unity": "2021.1",
   "description": "help you to boost up your first API service communication with JSON as payload and Bearer authorization Scheme",
   "keywords": [
