@@ -120,6 +120,7 @@ namespace MontanaGames.JsonAPIClient
             {
                 NullValueHandling = this.SerializerSettings.NullValueHandling,
                 ReferenceLoopHandling = this.SerializerSettings.ReferenceLoopHandling,
+                
             };
 
             HttpClientHandler handler = new HttpClientHandler()
@@ -183,13 +184,17 @@ namespace MontanaGames.JsonAPIClient
             catch (HttpRequestException ex)
             {
                 onServerError?.Invoke($"Server error: {ex.Message}");
+    #if UNITY_EDITOR
                 Debug.LogError($"Server error: {ex.Message}");
+    #endif
             } 
             catch (Exception ex)
             {
                 IsConnected = false;
                 onNetworkError?.Invoke($"Network error: {ex.Message}");
-                Debug.LogError($"Network error: {ex.Message}");
+#if UNITY_EDITOR
+                Debug.LogError($"Network error: {ex}");
+#endif
             }
 
             return default;
@@ -235,13 +240,11 @@ namespace MontanaGames.JsonAPIClient
             catch (HttpRequestException ex)
             {
                 onServerError?.Invoke($"Server error: {ex.Message}");
-                Debug.LogError($"Server error: {ex.Message}");
             } 
             catch (Exception ex)
             {
                 IsConnected = false;
                 onNetworkError?.Invoke($"Network error: {ex.Message}");
-                Debug.LogError($"Network error: {ex.Message}");
             }
 
             return default;
