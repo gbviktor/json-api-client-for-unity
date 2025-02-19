@@ -219,43 +219,13 @@ namespace MontanaGames.JsonAPIClient
                 {
                     case HttpStatusCode.OK:
                     {
-                        try
-                        {
-                            IsConnected = true;
-                            var responseObject = serializer.Deserialize<ResponseType>(reader);
-
-                            var headers = response.Headers;
-                            ApplyBearerTokenFromResponseHeader(headers);
-
-                            return responseObject;
-                        } catch (Exception ex)
-                        {
-                            Debug.LogError(requestUrl);
-                            Debug.LogError(reader.ReadAsString());
-
-                            await UniTask.Delay(TimeSpan.FromMilliseconds(100));
-                            
-							response = await client.PostAsync(requestUrl,
-                    			new StringContent(ToJsonString(data), Encoding.UTF8));
-
-                			responseStream = await response.Content.ReadAsStreamAsync();
-
-                			using var sr2 = new StreamReader(responseStream);
-                			using JsonReader reader2 = new JsonTextReader(sr);
-
-                			statusCode = response.StatusCode;
-
-             				switch (statusCode)
-                			{
-                    			case HttpStatusCode.OK:
-                    			{
-                            		IsConnected = true;
-                            		var responseObject2 = serializer.Deserialize<ResponseType>(reader2);
-									return responseObject2;
-								}
-							}
-                            throw;
-                        }
+                        IsConnected = true;
+                        var responseObject = serializer.Deserialize<ResponseType>(reader);
+                    
+                        var headers = response.Headers;
+                        ApplyBearerTokenFromResponseHeader(headers);
+                    
+                        return responseObject;
                     }
                     case HttpStatusCode.Unauthorized:
                         onUnauthorized?.Invoke();
