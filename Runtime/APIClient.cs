@@ -45,9 +45,10 @@ namespace MontanaGames.JsonAPIClient
                 ApplyBearerTokenHeader();
             }
         }
-        public APIClient SetBearerToken(string bearerToken)
+        public APIClient SetBearerToken(string bearerToken, Action<string> onTokenUpdateddByServer = default)
         {
             BearerToken = bearerToken;
+            onBearerTokenUpdated = onTokenUpdateddByServer;
             return this;
         }
         private void ApplyBearerTokenHeader()
@@ -61,6 +62,7 @@ namespace MontanaGames.JsonAPIClient
         private Action onUnauthorized;
         private Action<string> onNetworkError;
         private Action<string> onServerError;
+        private Action<string> onBearerTokenUpdated;
 
         public APIClient OnUnauthorized(Action onUnauthorized)
         {
@@ -258,6 +260,7 @@ namespace MontanaGames.JsonAPIClient
             if (headers.TryGetValues("X-Authorization", out var keys))
             {
                 BearerToken = keys.FirstOrDefault();
+                onBearerTokenUpdated?.Invoke(BearerToken);
             }
         }
         #endregion
